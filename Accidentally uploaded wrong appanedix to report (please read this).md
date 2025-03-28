@@ -2,7 +2,7 @@ Mistaken appendix upload (please read)
 
 
 I’ve spoken to Mark about the possibility of disregarding the appendix and looking at this one instead, and he said that would be okay. 
-The reason for this is that I accidentally uploaded the wrong PDF, where I just had a collection of ideas. I was asking ChatGPT to brainstorm ideas of what I should include in the appendix just to make sure I didnt forget something important, however with my accidentally submitting the wrong PDF I ended up with the document that included that and not what I had written.
+The reason for this is that I accidentally uploaded the wrong PDF, where I just had a collection of ideas. 
 
 
 --------------------------------------------------------------------------------------------------------------------------
