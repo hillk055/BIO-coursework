@@ -1,16 +1,14 @@
 Mistaken appendix upload (please read)
 
 
-I’ve spoken to Mark about the possibly of disregarding the appendix and looking at this one instead, and he said that would be okay. 
-The reason for this is I accidentally uploaded the wrong PDF where I had just a collection of ideas but was not supposed to be anywhere
-near the final thing. As a result it doesn’t make any sense and there are lots of incomplete sentences etc. Apologies for this but I was 
-wondering if it would be possible to mark the report based on this instead :).
+I’ve spoken to Mark about the possibility of disregarding the appendix and looking at this one instead, and he said that would be okay. 
+The reason for this is that I accidentally uploaded the wrong PDF, where I just had a collection of ideas. I was asking ChatGPT to brainstorm ideas of what I should include in the appendix just to make sure I didnt forget something important, however with my accidentally submitting the wrong PDF I ended up with the document that included that and not what I had written.
 
 
 --------------------------------------------------------------------------------------------------------------------------
 Appendix that was supposed to be submitted.
 
-To plot the phase plane we use python libraries such as numpy for vectorised math operations, matplotlib.pyplot for visualization, 
+To plot the phase plane we use python libraries such as numpy for vectorised math operations, matplotlib.pyplot for visualisation, 
 and scipy.integrate.odeint for numerically solving the system of ordinary differential equations (ODEs). The model is wrapped in a class 
 called PrescottModel, which is initialised with a dictionary of the parameters given in the Prescott paper. The method v_nullcline 
 calculates the V-nullcline where membrane voltage doesn't change. The method w_nullcline calculates the w-nullcline where the gating 
