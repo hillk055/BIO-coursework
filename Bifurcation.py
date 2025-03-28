@@ -19,7 +19,7 @@ c_w = 10.0
 w_w = 0.15
 
 
-def prescott_rhs(y, t, I):
+def prescott_equations(y, t, I):
 
     V, w = y
 
@@ -64,8 +64,7 @@ def compute_jacobian(V, w, I):
 
 def find_fixed_points(I):
 
-    """Find all unique fixed points for a given input current"""
-    # Generate some reasonable initial guesses
+    # initial guesses
     V_guesses = np.linspace(-80, 40, 6)
     w_guesses = np.linspace(0, 1, 4)
     initial_guesses = [[v, w] for v in V_guesses for w in w_guesses]
@@ -73,10 +72,10 @@ def find_fixed_points(I):
     fixed_points = []
 
     for guess in initial_guesses:
-        sol = fsolve(lambda y: prescott_rhs(y, 0, I), guess, xtol=1e-6)
-        residual = np.linalg.norm(prescott_rhs(sol, 0, I))
+        sol = fsolve(lambda y: prescott_equations(y, 0, I), guess, xtol=1e-6)
+        residual = np.linalg.norm(prescott_equations(sol, 0, I))
 
-        # Check if it's a valid and unique fixed point
+        # if point evaluated with equations is within a certain threshold we can mark it is as a fixed point
         if residual < 1e-5 and not any(np.linalg.norm(sol - fp) < 1e-2 for fp in fixed_points):
             fixed_points.append(sol)
 
@@ -105,7 +104,7 @@ def plot_bifurcation(i_values: list = (0, 60), steps: int= 61):
         unstable_pts.append([V for V, _, s in fps if not s])
 
         t = np.linspace(0, 300, 2000)
-        sol = odeint(prescott_rhs, [initial_voltage, recovery_initial_value], t, args=(I,))
+        sol = odeint(prescott_equations, [initial_voltage, recovery_initial_value], t, args=(I,))
         V_trace = sol[:, 0]
         V_post = V_trace[t > 200]
 
@@ -136,5 +135,6 @@ def plot_bifurcation(i_values: list = (0, 60), steps: int= 61):
 
 
 if __name__ == "__main__":
-    b_w = -10  # tweak for effect
-    plot_bifurcation(I_range=(0, 60), steps=61)
+
+    b_w = -10 # random class one value
+    plot_bifurcation(i_values=(0, 60), steps=61)
