@@ -18,7 +18,7 @@ class PrescottModel:
         p = self.params
         return 0.5 * (1 + np.tanh((V - bw) / p["cw"]))
 
-    def morris_lecar_ode(self, state, t, bw):
+    def prescott_ode(self, state, t, bw):
         p = self.params
         V, w = state
         m = 0.5 * (1 + np.tanh((V - p["bm"]) / p["cm"]))
@@ -30,7 +30,7 @@ class PrescottModel:
         return [dVdt, dwdt]
 
     def simulate_trajectory(self, t, init_state, bw):
-        sol = odeint(self.morris_lecar_ode, init_state, t, args=(bw,))
+        sol = odeint(self.prescott_ode, init_state, t, args=(bw,))
         return sol
 
     def plot_nullclines_and_trajectory(self, bw, init_state, t_range, V_range):
