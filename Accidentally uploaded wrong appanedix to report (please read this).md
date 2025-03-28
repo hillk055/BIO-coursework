@@ -1,3 +1,6 @@
+Mistaken appendix upload (please read)
+
+
 I’ve spoken to Mark about the possibly of disregarding the appendix and looking at this one instead, and he said that would be okay. 
 The reason for this is I accidentally uploaded the wrong PDF where I had just a collection of ideas but was not supposed to be anywhere
 near the final thing. As a result it doesn’t make any sense and there are lots of incomplete sentences etc. Apologies for this but I was 
