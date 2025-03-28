@@ -3,6 +3,10 @@ The reason for this is I accidentally uploaded the wrong PDF where I had just a 
 near the final thing. As a result it doesn’t make any sense and there are lots of incomplete sentences etc. Apologies for this but I was 
 wondering if it would be possible to mark the report based on this instead :).
 
+
+--------------------------------------------------------------------------------------------------------------------------
+Appendix that was supposed to be submitted.
+
 To plot the phase plane we use python libraries such as numpy for vectorised math operations, matplotlib.pyplot for visualization, 
 and scipy.integrate.odeint for numerically solving the system of ordinary differential equations (ODEs). The model is wrapped in a class 
 called PrescottModel, which is initialised with a dictionary of the parameters given in the Prescott paper. The method v_nullcline 
