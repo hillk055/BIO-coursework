@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 
 
-class MorrisLecarModel:
+class PrescottModel:
     def __init__(self, parameters):
         self.params = parameters
 
@@ -68,7 +68,7 @@ def main():
     t_range = [0, 1000]
     V_range = [-80, 50]
 
-    model = MorrisLecarModel(parameters)
+    model = PrescottModel(parameters)
     model.plot_nullclines_and_trajectory(bw, init_state, t_range, V_range)
 
 
