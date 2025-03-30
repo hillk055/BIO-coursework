@@ -10,7 +10,6 @@ class PrescottModel:
         self.I_stim = I_stim
         self.bw = bw
 
-        # Fixed model parameters
         self.gfast: int = 20
         self.gslow: int = 20
         self.gleak: int = 2
