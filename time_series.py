@@ -2,54 +2,81 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-def prescott_model(t, Y, I_stim, gfast, gslow, gleak, ENa, EK, Eleak, C, bw, ww, bm, cm, cw):
-    V, w = Y
 
-    m_inf = 0.5 * (1 + np.tanh((V - bm) / cm))
-    w_inf = 0.5 * (1 + np.tanh((V - bw) / cw))
-    tau_w = 1 / np.cosh((V - bw) / (2 * cw))  
+class PrescottModel:
 
-    I_Na = gfast * m_inf * (V - ENa)
-    I_K = gslow * w * (V - EK)
-    I_leak = gleak * (V - Eleak)
+    def __init__(self, bw: float, I_stim: float) -> None:
 
-    dVdt = (I_stim - I_Na - I_K - I_leak) / C
-    dwdt = ww * (w_inf - w) / tau_w
+        self.I_stim = I_stim
+        self.bw = bw
 
-    return [dVdt, dwdt]
+        # Fixed model parameters
+        self.gfast: int = 20
+        self.gslow: int = 20
+        self.gleak: int = 2
+        self.ENa: int = 50
+        self.EK: int = -100
+        self.Eleak: int = -70
+        self.C: int = 2
+        self.bm: float = -1.2
+        self.cm: int = 18
+        self.cw: int = 10
+        self.ww: float = 0.15
 
-# Time params
-t_span = [0, 200]
-t_eval = np.linspace(*t_span, 1000)
+        self.dwdt = None
+        self.dvdt = None
 
-params = {
-    "gfast": 20, "gslow": 20, "gleak": 2,
-    "ENa": 50, "EK": -100, "Eleak": -70, "C": 2,
-    "bm": -1.2, "cm": 18, "cw": 10, "ww": 0.15
-}
+    def model(self, t: list, Y: list) -> list:
 
-class_params = {
-    "Class 1": {"bw": -21, "I_stim": 37},
-    "Class 2": {"bw": -21, "I_stim": 60},
-}
+        V, w = Y
 
-fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-plt.subplots_adjust(hspace=0.4)
+        m_inf = 0.5 * (1 + np.tanh((V - self.bm) / self.cm))
+        w_inf = 0.5 * (1 + np.tanh((V - self.bw) / self.cw))
+        tau_w = 1 / np.cosh((V - self.bw) / (2 * self.cw))
 
-for i, (label, c_params) in enumerate(class_params.items()):
-    sol = solve_ivp(prescott_model, t_span, [-70, 0], t_eval=t_eval, args=(
-        c_params["I_stim"], params["gfast"], params["gslow"], params["gleak"],
-        params["ENa"], params["EK"], params["Eleak"], params["C"],
-        c_params["bw"], params["ww"], params["bm"], params["cm"], params["cw"]
-    ))
+        self.dvdt = (self.I_stim
+                - self.gfast * m_inf * (V - self.ENa)
+                - self.gslow * w * (V - self.EK)
+                - self.gleak * (V - self.Eleak)) / self.C
+        self.dwdt = self.ww * (w_inf - w) / tau_w
 
-    ax = axes[i]
-    ax.plot(sol.t, sol.y[0], color='k')
-    ax.set_title(label, fontsize=14)
-    ax.text(-0.12, 1.05, f"{chr(65+i)}", transform=ax.transAxes,
-            fontsize=18, fontweight='bold', ha="center", va="center")
-    ax.tick_params(axis='both', labelsize=14)
+        return [self.dvdt, self.dwdt]
 
-fig.text(0.068, 0.5, "Membrane Potential (mV)", va="center", rotation="vertical", fontsize=20)
-fig.text(0.5, 0.03, "Time (ms)", ha="center", fontsize=20)
-plt.show()
+    def solve(self, t_span, y0, t_eval):
+
+        return solve_ivp(self.model, t_span, y0, t_eval=t_eval)
+
+
+
+def main():
+
+    t = np.linspace(0, 200, 1000)
+
+    # Define model instances for different classes
+    model_class1 = PrescottModel(bw=-21, I_stim=37)
+    model_class3 = PrescottModel(bw=-21, I_stim=60)
+
+    models = [("class 1", model_class1), ("class 2", model_class3)]
+
+    # Plotting
+    fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    plt.subplots_adjust(hspace=0.4)
+
+    for i, (label, model) in enumerate(models):
+        sol = model.solve([0, 200], [-70, 0], t_eval=t)
+
+        ax = axes[i]
+        ax.plot(sol.t, sol.y[0], color='k')
+        ax.set_title(label, fontsize=14)
+        ax.text(-0.12, 1.05, f"{chr(65+i)}", transform=ax.transAxes,
+                fontsize=18, fontweight='bold', ha="center", va="center")
+        ax.tick_params(axis='both', labelsize=14)
+
+    fig.text(0.068, 0.5, "Membrane Potential (mV)", va="center", rotation="vertical", fontsize=20)
+    fig.text(0.5, 0.03, "Time (ms)", ha="center", fontsize=20)
+    plt.show()
+
+
+if __name__ == "__main__":
+
+    main()
