@@ -66,7 +66,6 @@ class PrescottModel:
 
         plt.xlabel("Membrane Potential V (mV)")
         plt.ylabel("Recovery Variable w")
-        plt.title("Prescott Phase Plane: Nullclines & Trajectory")
         plt.legend()
         plt.grid(True)
         plt.ylim(-0.1, 1)
