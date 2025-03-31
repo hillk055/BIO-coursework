@@ -2,139 +2,138 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 from scipy.optimize import fsolve
-
-# params
-
-C = 2.0
-g_fast = 20.0
-g_slow = 7.0
-g_leak = 2.0
-E_Na = 50.0
-E_K = -100.0
-E_leak = -70.0
-b_m = -1.2
-c_m = 18.0
-b_w = -13.0
-c_w = 10.0
-w_w = 0.15
+from typing import Tuple, List
 
 
-def prescott_equations(y, t, I):
+class PrescottModel:
 
-    V, w = y
+    def __init__(self, bw: float, I_stim: float) -> None:
 
-    m_inf = 0.5 * (1 + np.tanh((V - b_m) / c_m))
-    w_inf = 0.5 * (1 + np.tanh((V - b_w) / c_w))
-    tau_w = 1.0 / np.cosh((V - b_w) / (2.0 * c_w))
+        self.I_stim = I_stim
+        self.b_w = bw
 
-    dVdt = (1.0 / C) * (I - g_fast * m_inf * (V - E_Na)
-                        - g_slow * w * (V - E_K)
-                        - g_leak * (V - E_leak))
-    dwdt = w_w * (w_inf - w) / tau_w
+        # Fixed model parameters
+        self.g_fast: int = 20
+        self.g_slow: int = 20
+        self.g_leak: int = 2
+        self.E_Na: int = 50
+        self.E_K: int = -100
+        self.E_leak: int = -70
+        self.C: int = 2
+        self.b_m: float = -1.2
+        self.c_m: int = 18
+        self.c_w: int = 10
+        self.w_w: float = 0.15
 
-    return [dVdt, dwdt]
+        self.dwdt = None
+        self.dvdt = None
 
+    def prescott_equations(self, y: Tuple[float, float], t: float, I: float) -> List[float]:
+        V, w = y
 
-def compute_jacobian(V, w, I):
+        m_inf = 0.5 * (1 + np.tanh((V - self.b_m) / self.c_m))
+        w_inf = 0.5 * (1 + np.tanh((V - self.b_w) / self.c_w))
+        tau_w = 1.0 / np.cosh((V - self.b_w) / (2.0 * self.c_w))
 
-    """Jacobian matrix for stability analysis at a fixed point"""
-    dm_dV = 0.5 / c_m / np.cosh((V - b_m) / c_m) ** 2
-    dw_dV = 0.5 / c_w / np.cosh((V - b_w) / c_w) ** 2
-    tau_w = 1.0 / np.cosh((V - b_w) / (2 * c_w))
-    dtau_dV = -np.sinh((V - b_w) / (2 * c_w)) / (2 * c_w * np.cosh((V - b_w) / (2 * c_w)) ** 2)
+        dVdt = (1.0 / self.C) * (I - self.g_fast * m_inf * (V - self.E_Na)
+                                 - self.g_slow * w * (V - self.E_K)
+                                 - self.g_leak * (V - self.E_leak))
+        dwdt = self.w_w * (w_inf - w) / tau_w
 
-    m_inf = 0.5 * (1 + np.tanh((V - b_m) / c_m))
-    w_inf = 0.5 * (1 + np.tanh((V - b_w) / c_w))
+        return [dVdt, dwdt]
 
-    dI_fast_dV = g_fast * (dm_dV * (V - E_Na) + m_inf)
-    dI_slow_dV = g_slow * w
-    dI_leak_dV = g_leak
+    def compute_jacobian(self, V: float, w: float, I: float) -> np.ndarray:
+        dm_dV = 0.5 / self.c_m / np.cosh((V - self.b_m) / self.c_m) ** 2
+        dw_dV = 0.5 / self.c_w / np.cosh((V - self.b_w) / self.c_w) ** 2
+        tau_w = 1.0 / np.cosh((V - self.b_w) / (2 * self.c_w))
+        dtau_dV = -np.sinh((V - self.b_w) / (2 * self.c_w)) / (2 * self.c_w * np.cosh((V - self.b_w) / (2 * self.c_w)) ** 2)
 
-    df1dV = -(dI_fast_dV + dI_slow_dV + dI_leak_dV) / C
-    df1dw = -g_slow * (V - E_K) / C
+        m_inf = 0.5 * (1 + np.tanh((V - self.b_m) / self.c_m))
+        w_inf = 0.5 * (1 + np.tanh((V - self.b_w) / self.c_w))
 
-    part1 = dw_dV / tau_w
-    part2 = (w_inf - w) * (-dtau_dV / tau_w ** 2)
-    df2dV = w_w * (part1 + part2)
-    df2dw = -w_w / tau_w
+        dI_fast_dV = self.g_fast * (dm_dV * (V - self.E_Na) + m_inf)
+        dI_slow_dV = self.g_slow * w
+        dI_leak_dV = self.g_leak
 
-    return np.array([[df1dV, df1dw],
-                     [df2dV, df2dw]])
+        df1dV = -(dI_fast_dV + dI_slow_dV + dI_leak_dV) / self.C
+        df1dw = -self.g_slow * (V - self.E_K) / self.C
 
+        part1 = dw_dV / tau_w
+        part2 = (w_inf - w) * (-dtau_dV / tau_w ** 2)
+        df2dV = self.w_w * (part1 + part2)
+        df2dw = -self.w_w / tau_w
 
-def find_fixed_points(I):
+        return np.array([[df1dV, df1dw], [df2dV, df2dw]])
 
-    # initial guesses
-    V_guesses = np.linspace(-80, 40, 6)
-    w_guesses = np.linspace(0, 1, 4)
-    initial_guesses = [[v, w] for v in V_guesses for w in w_guesses]
+    def find_fixed_points(self, I: float) -> List[Tuple[float, float, bool]]:
+        V_guesses = np.linspace(-80, 40, 6)
+        w_guesses = np.linspace(0, 1, 4)
+        initial_guesses = [[v, w] for v in V_guesses for w in w_guesses]
 
-    fixed_points = []
+        fixed_points = []
 
-    for guess in initial_guesses:
-        sol = fsolve(lambda y: prescott_equations(y, 0, I), guess, xtol=1e-6)
-        residual = np.linalg.norm(prescott_equations(sol, 0, I))
+        for guess in initial_guesses:
+            sol = fsolve(lambda y: self.prescott_equations(y, 0, I), guess, xtol=1e-6)
+            residual = np.linalg.norm(self.prescott_equations(sol, 0, I))
 
-        # if point evaluated with equations is within a certain threshold we can mark it is as a fixed point
-        if residual < 1e-5 and not any(np.linalg.norm(sol - fp) < 1e-2 for fp in fixed_points):
-            fixed_points.append(sol)
+            if residual < 1e-5 and not any(np.linalg.norm(sol - fp) < 1e-2 for fp in fixed_points):
+                fixed_points.append(sol)
 
-    results = []
-    for V_fp, w_fp in fixed_points:
-        J = compute_jacobian(V_fp, w_fp, I)
-        eigvals = np.linalg.eigvals(J)
-        stable = np.all(np.real(eigvals) < 0)
-        results.append((V_fp, w_fp, stable))
+        results = []
+        for V_fp, w_fp in fixed_points:
+            J = self.compute_jacobian(V_fp, w_fp, I)
+            eigvals = np.linalg.eigvals(J)
+            stable = np.all(np.real(eigvals) < 0)
+            results.append((V_fp, w_fp, stable))
 
-    return results
+        return results
 
+    def plot_bifurcation(self, i_range: Tuple[float, float] = (0, 60), steps: int = 61) -> None:
+        i_values = np.linspace(*i_range, steps)
+        lc_min = np.full(steps, np.nan)
+        lc_max = np.full(steps, np.nan)
+        stable_pts, unstable_pts = [], []
 
-def plot_bifurcation(i_values: list = (0, 60), steps: int= 61):
-    """Plot bifurcation diagram showing fixed points and limit cycles"""
-    i_values = np.linspace(*i_values, steps)
-    lc_min = np.full(steps, np.nan)
-    lc_max = np.full(steps, np.nan)
-    stable_pts, unstable_pts = [], []
+        initial_voltage = -70.0
+        recovery_initial_value = 0.0
 
-    initial_voltage, recovery_initial_value = -70.0, 0.0  # initial condition
+        for i, I in enumerate(i_values):
+            fps = self.find_fixed_points(I)
+            stable_pts.append([V for V, _, s in fps if s])
+            unstable_pts.append([V for V, _, s in fps if not s])
 
-    for i, I in enumerate(i_values):
-        fps = find_fixed_points(I)
-        stable_pts.append([V for V, _, s in fps if s])
-        unstable_pts.append([V for V, _, s in fps if not s])
+            t = np.linspace(0, 300, 2000)
+            sol = odeint(self.prescott_equations, [initial_voltage, recovery_initial_value], t, args=(I,))
+            V_trace = sol[:, 0]
+            V_post = V_trace[t > 200]
 
-        t = np.linspace(0, 300, 2000)
-        sol = odeint(prescott_equations, [initial_voltage, recovery_initial_value], t, args=(I,))
-        V_trace = sol[:, 0]
-        V_post = V_trace[t > 200]
+            if V_post.max() - V_post.min() > 2.0:
+                lc_min[i], lc_max[i] = V_post.min(), V_post.max()
 
-        if V_post.max() - V_post.min() > 2.0:
-            lc_min[i], lc_max[i] = V_post.min(), V_post.max()
+            initial_voltage, recovery_initial_value = sol[-1]
 
-        # use the obtained value as th e next initial conditions for the next loop
-        initial_voltage, recovery_initial_value = sol[-1]
+        plt.figure(figsize=(7, 5))
+        for i, I in enumerate(i_values):
+            plt.plot([I] * len(stable_pts[i]), stable_pts[i], 'ko')
+            plt.plot([I] * len(unstable_pts[i]), unstable_pts[i], 'kx')
 
-    #   # plot stuff
-    plt.figure(figsize=(7, 5))
-    for i, I in enumerate(i_values):
-        plt.plot([I] * len(stable_pts[i]), stable_pts[i], 'ko')
-        plt.plot([I] * len(unstable_pts[i]), unstable_pts[i], 'kx')
+        has_lc = ~np.isnan(lc_min)
+        plt.plot(i_values[has_lc], lc_min[has_lc], 'r.', label='LC min')
+        plt.plot(i_values[has_lc], lc_max[has_lc], 'r.', label='LC max')
 
-    has_lc = ~np.isnan(lc_min)
+        plt.xlabel('I_stim (µA/cm²)')
+        plt.ylabel('Membrane Potential (mV)')
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
 
-    plt.plot(i_values[has_lc], lc_min[has_lc], 'r.', label='LC min')
-    plt.plot(i_values[has_lc], lc_max[has_lc], 'r.', label='LC max')
+        plt.show()
 
-    plt.xlabel('I_stim (µA/cm²)')
-    plt.ylabel('Membrane Potential (mV)')
-    plt.title('Bifurcation Diagram - Prescott Neuron Model')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
+def main():
+    model = PrescottModel(10, 60)
+    model.plot_bifurcation(i_range=(0, 60), steps=61)
 
 if __name__ == "__main__":
+    main()
 
-    b_w = -10 # random class one value
-    plot_bifurcation(i_values=(0, 60), steps=61)
+
